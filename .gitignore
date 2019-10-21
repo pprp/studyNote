@@ -1,0 +1,5 @@
+
+yolov3-fcos/images/train2014/*
+yolov3-fcos/images/val2014/*
+yolov3-fcos/labels/*
+yolov3-fcos/weights/*

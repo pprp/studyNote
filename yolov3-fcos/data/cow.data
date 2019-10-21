@@ -1,0 +1,6 @@
+classes=1
+train=./data/cow_train.txt
+valid=./data/cow_test.txt
+names=data/coco.names
+backup=backup/
+eval=coco

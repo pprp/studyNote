@@ -53,4 +53,3 @@ D:/GitHub/studyNote/yolov3-fcos/images/val2014/0137-1585.jpg
 D:/GitHub/studyNote/yolov3-fcos/images/val2014/0137-1650.jpg
 D:/GitHub/studyNote/yolov3-fcos/images/val2014/0137-1912.jpg
 D:/GitHub/studyNote/yolov3-fcos/images/val2014/0137-2085.jpg
-D:/GitHub/studyNote/yolov3-fcos/images/val2014/.jpg

@@ -153,19 +153,21 @@ class YOLOLayer(nn.Module):
             create_grids(self, img_size=max(img_size), ng=(nx, ny))
 
     def forward(self, p, img_size, var=None):
+        # p means prediction detailed in https://www.cnblogs.com/sdu20112013/p/11116237.html
         if ONNX_EXPORT:
             bs = 1  # batch size
         else:
+            # p -> (batch size , channels, grid size(y的坐标), grid size(x的坐标))
             bs, ny, nx = p.shape[0], p.shape[-2], p.shape[-1]
             if (self.nx, self.ny) != (nx, ny):
                 create_grids(self, img_size, (nx, ny), p.device)
 
         # p.view(bs, 255, 13, 13) -- > (bs, 3, 13, 13, 85)  # (bs, anchors, grid, grid, classes + xywh)
         p = p.view(bs, self.na, self.nc + 5, self.ny, self.nx).permute(0, 1, 3, 4, 2).contiguous()  # prediction
-        
+        # to (batch_size, num of anchors, num y grid, num x grid, num class+5)
         if self.training:
             return p
-        elif ONNX_EXPORT:
+        elif ONNX_EXPORT:# 导出onnx模型
             # Constants CAN NOT BE BROADCAST, ensure correct shape!
             ngu = self.ng.repeat((1, self.na * self.nx * self.ny, 1))
             grid_xy = self.grid_xy.repeat((1, self.na, 1, 1, 1)).view((1, -1, 2))
@@ -190,7 +192,7 @@ class YOLOLayer(nn.Module):
             p_cls = p_cls.permute(2, 1, 0)
             return torch.cat((xy / ngu, wh, p_conf, p_cls), 2).squeeze().t()
 
-        else:  # inference
+        else:  # inference 测试推理阶段
             io = p.clone()  # inference output
             io[..., 0:2] = torch.sigmoid(io[..., 0:2]) + self.grid_xy  # xy
             io[..., 2:4] = torch.exp(io[..., 2:4]) * self.anchor_wh  # wh yolo method
@@ -222,8 +224,8 @@ class Darknet(nn.Module):
 
     def forward(self, x, var=None):
         img_size = max(x.shape[-2:])
-        layer_outputs = []
-        output = []
+        layer_outputs = [] # 该变量记录所有的输入输出
+        output = [] # 该变量只记录yolo层的输出
 
         for i, (module_def, module) in enumerate(zip(self.module_defs, self.module_list)):
             mtype = module_def['type']
@@ -239,7 +241,7 @@ class Darknet(nn.Module):
                 layer_i = int(module_def['from'])
                 x = layer_outputs[-1] + layer_outputs[layer_i]
             elif mtype == 'yolo': # 关键部位，检测层
-                x = module[0](x, img_size)
+                x = module[0](x, img_size) # 调用的是YOLOLayer中forward函数中的参数
                 output.append(x)
             layer_outputs.append(x)
 
@@ -249,7 +251,9 @@ class Darknet(nn.Module):
             output = torch.cat(output, 1)  # cat 3 layers 85 x (507, 2028, 8112) to 85 x 10647
             print(output.shape)
             return output[5:85].t(), output[:4].t()  # ONNX scores, boxes
-        else:
+        else: # 测试过程
+            # 这里output只需要记录yolo层的输出
+            # 输出为： reshape from [1, 3, 13, 13, 85] to [1, 507, 85]，和prediction得到的tensor
             io, p = list(zip(*output))  # inference output, training output
             return torch.cat(io, 1), p
 

@@ -85,16 +85,16 @@ def train(
     train_path = data_dict['train']
     nc = int(data_dict['classes'])  # nc = number of classes
 
-    # Initialize model 整个模型
+    # Initialize model 整个darknet模型
     model = Darknet(cfg, img_size).to(device)
 
-    # Optimizer
+    # pytorch 最常用的优化器，SGD
     optimizer = optim.SGD(model.parameters(), lr=hyp['lr0'], momentum=hyp['momentum'], weight_decay=hyp['weight_decay'])
 
     cutoff = -1  # backbone reaches to cutoff layer
     start_epoch = 0
     best_loss = float('inf')
-    nf = int(model.module_defs[model.yolo_layers[0] - 1]['filters'])  # yolo layer size (i.e. 255)
+    nf = int(model.module_defs[model.yolo_layers[0] - 1]['filters'])  # yolo layer size (i.e. 255) 18 = (class+5) * 3
     if resume:  # Load previously saved model
         if transfer:  # Transfer learning
             chkpt = torch.load(weights + 'yolov3-spp.pt', map_location=device)
@@ -126,18 +126,18 @@ def train(
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lf, last_epoch=start_epoch - 1)
     # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=[218, 245], gamma=0.1, last_epoch=start_epoch-1)
 
-    # # Plot lr schedule
-    # y = []
-    # for _ in range(epochs):
-    #     scheduler.step()
-    #     y.append(optimizer.param_groups[0]['lr'])
-    # plt.plot(y, label='LambdaLR')
-    # plt.xlabel('epoch')
-    # plt.xlabel('LR')
-    # plt.tight_layout()
-    # plt.savefig('LR.png', dpi=300)
+    # Plot lr schedule
+    y = []
+    for _ in range(epochs):
+        scheduler.step()
+        y.append(optimizer.param_groups[0]['lr'])
+    plt.plot(y, label='LambdaLR')
+    plt.xlabel('epoch')
+    plt.xlabel('LR')
+    plt.tight_layout()
+    plt.savefig('LR.png', dpi=300)
 
-    # Dataset
+    # Dataset img_size = 608
     dataset = LoadImagesAndLabels(train_path, img_size, batch_size, augment=True, rect=False, image_weights=False)
 
     # Initialize distributed training
@@ -163,14 +163,16 @@ def train(
 
     # Start training
     model.hyp = hyp  # attach hyperparameters to model
-    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  # attach class weights
-    model_info(model)
-    nb = len(dataloader)
+    model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  
+    # attach class weights 不太明白以上那一行的作用
+    model_info(model,'full')
+    
+    nb = len(dataloader)# 数据集中图片的个数
     maps = np.zeros(nc)  # mAP per class
     results = (0, 0, 0, 0, 0)  # P, R, mAP, F1, test_loss
     n_burnin = min(round(nb / 5 + 1), 1000)  # burn-in batches
-    for f in glob.glob('train_batch*.jpg') + glob.glob('test_batch*.jpg'):
-        os.remove(f)
+    # for f in glob.glob('train_batch*.jpg') + glob.glob('test_batch*.jpg'):
+    #     os.remove(f)
     t, t0 = time.time(), time.time()
     for epoch in range(start_epoch, epochs):
         model.train()
@@ -298,16 +300,16 @@ def print_mutation(hyp, results):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epochs', type=int, default=273, help='number of epochs')
-    parser.add_argument('--batch-size', type=int, default=16, help='size of each image batch')
+    parser.add_argument('--epochs', type=int, default=2, help='number of epochs')
+    parser.add_argument('--batch-size', type=int, default=1, help='size of each image batch')
     parser.add_argument('--accumulate', type=int, default=1, help='accumulate gradient x batches before optimizing')
-    parser.add_argument('--cfg', type=str, default='cfg/yolov3-spp.cfg', help='cfg file path')
-    parser.add_argument('--data-cfg', type=str, default='data/coco.data', help='coco.data file path')
+    parser.add_argument('--cfg', type=str, default='cfg/yolov3-1cls.cfg', help='cfg file path')
+    parser.add_argument('--data-cfg', type=str, default='data/cow.data', help='coco.data file path')
     parser.add_argument('--multi-scale', action='store_true', help='random image sizes per batch 320 - 608')
     parser.add_argument('--img-size', type=int, default=416, help='inference size (pixels)')
     parser.add_argument('--resume', action='store_true', help='resume training flag')
     parser.add_argument('--transfer', action='store_true', help='transfer learning flag')
-    parser.add_argument('--num-workers', type=int, default=4, help='number of Pytorch DataLoader workers')
+    parser.add_argument('--num-workers', type=int, default=0, help='number of Pytorch DataLoader workers')
     parser.add_argument('--dist-url', default='tcp://127.0.0.1:9999', type=str, help='distributed training init method')
     parser.add_argument('--rank', default=0, type=int, help='distributed training node rank')
     parser.add_argument('--world-size', default=1, type=int, help='number of nodes for distributed training')

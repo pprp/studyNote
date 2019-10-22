@@ -215,4 +215,3 @@ D:/GitHub/studyNote/yolov3-fcos/images/train2014/0137-1985.jpg
 D:/GitHub/studyNote/yolov3-fcos/images/train2014/0137-2012.jpg
 D:/GitHub/studyNote/yolov3-fcos/images/train2014/0137-2050.jpg
 D:/GitHub/studyNote/yolov3-fcos/images/train2014/0137-2112.jpg
-D:/GitHub/studyNote/yolov3-fcos/images/train2014/.jpg

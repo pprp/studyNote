@@ -146,7 +146,7 @@ def train(
         model = torch.nn.parallel.DistributedDataParallel(model)
         # sampler = torch.utils.data.distributed.DistributedSampler(dataset)
 
-    # Dataloader
+    # Dataloader 数据加载比较复杂，需要查看API结合进行理解
     dataloader = DataLoader(dataset,
                             batch_size=batch_size,
                             num_workers=opt.num_workers,
@@ -175,7 +175,7 @@ def train(
     #     os.remove(f)
     t, t0 = time.time(), time.time()
     for epoch in range(start_epoch, epochs):
-        model.train()
+        model.train() # 将模型的模式改为train模式
         print(('\n%8s%12s' + '%10s' * 7) % ('Epoch', 'Batch', 'xy', 'wh', 'conf', 'cls', 'total', 'nTargets', 'time'))
 
         # Update scheduler
@@ -189,14 +189,16 @@ def train(
 
         # Update image weights (optional)
         w = model.class_weights.cpu().numpy() * (1 - maps)  # class weights
-        image_weights = labels_to_image_weights(dataset.labels, nc=nc, class_weights=w)
-        dataset.indices = random.choices(range(dataset.n), weights=image_weights, k=dataset.n)  # random weighted index
+        image_weights = labels_to_image_weights(dataset.labels, nc=nc, class_weights=w) # 不清楚这部分作用，同上
+        dataset.indices = random.choices(range(dataset.n), weights=image_weights, k=dataset.n)  # random weighted index 
+        # indices:目录
 
-        mloss = torch.zeros(5).to(device)  # mean losses
-        for i, (imgs, targets, _, _) in enumerate(dataloader):
+        mloss = torch.zeros(5).to(device)  # mean losses 进行初始化，分别记录：xy, wh, conf, cls, total
+        for i, (imgs, targets, _, _) in enumerate(dataloader): 
+            # i and data(imgs, targets, _ , _ ) 在dataset类中，torch.from_numpy(img), labels_out, img_path, (h, w)
             imgs = imgs.to(device)
             targets = targets.to(device)
-            nt = len(targets)
+            nt = len(targets) # num of targets 目标的个数
 
             # Plot images with bounding boxes
             if epoch == 0 and i == 0:
@@ -208,17 +210,17 @@ def train(
                 for x in optimizer.param_groups:
                     x['lr'] = lr
 
-            # Run model
+            # 运行模型，输入为图片，输出为向量
             pred = model(imgs)
 
-            # Compute loss
+            # 计算预测结果和标注结果之间的loss, yolo论文中的计算loss那一部分就是在这里
             loss, loss_items = compute_loss(pred, targets, model)
             if torch.isnan(loss):
                 print('WARNING: nan loss detected, ending training')
                 return results
 
             # Compute gradient
-            if mixed_precision:
+            if mixed_precision: #混合精度
                 with amp.scale_loss(loss, optimizer) as scaled_loss:
                     scaled_loss.backward()
             else:

@@ -140,7 +140,7 @@ def train(
     # Dataset img_size = 608
     dataset = LoadImagesAndLabels(train_path, img_size, batch_size, augment=True, rect=False, image_weights=False)
 
-    # Initialize distributed training
+    # Initialize distributed training 多GPU分布式训练
     if torch.cuda.device_count() > 1:
         dist.init_process_group(backend=opt.backend, init_method=opt.dist_url, world_size=opt.world_size, rank=opt.rank)
         model = torch.nn.parallel.DistributedDataParallel(model)
@@ -161,7 +161,7 @@ def train(
         from apex import amp
         model, optimizer = amp.initialize(model, optimizer, opt_level='O1')
 
-    # Start training
+    # 开始训练
     model.hyp = hyp  # attach hyperparameters to model
     model.class_weights = labels_to_class_weights(dataset.labels, nc).to(device)  
     # attach class weights 不太明白以上那一行的作用

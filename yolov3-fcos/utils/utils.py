@@ -264,6 +264,7 @@ def wh_iou(box1, box2):
 def compute_loss(p, targets, model):  # predictions, targets, model
     ft = torch.cuda.FloatTensor if p[0].is_cuda else torch.Tensor
     lxy, lwh, lcls, lconf = ft([0]), ft([0]), ft([0]), ft([0])
+    # build_targets对targets向量进行处理
     txy, twh, tcls, indices = build_targets(model, targets)
 
     # Define criteria
@@ -299,18 +300,19 @@ def compute_loss(p, targets, model):  # predictions, targets, model
 
 def build_targets(model, targets):
     # targets = [image, class, x, y, w, h]
-    iou_thres = model.hyp['iou_t']  # hyperparameter
+    iou_thres = model.hyp['iou_t']  # 超参数 iou阈值
     if type(model) in (nn.parallel.DataParallel, nn.parallel.DistributedDataParallel):
         model = model.module
 
-    nt = len(targets)
+    nt = len(targets)# 一张图有几个目标
+
     txy, twh, tcls, indices = [], [], [], []
-    for i in model.yolo_layers:
+    for i in model.yolo_layers:# 三个yolo层
         layer = model.module_list[i][0]
 
         # iou of targets-anchors
         t, a = targets, []
-        gwh = targets[:, 4:6] * layer.ng
+        gwh = targets[:, 4:6] * layer.ng # ng = (13,13)
         if nt:
             iou = [wh_iou(x, gwh) for x in layer.anchor_vec]
             iou, a = torch.stack(iou, 0).max(0)  # best iou and anchor

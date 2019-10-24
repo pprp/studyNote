@@ -3,3 +3,7 @@ yolov3-fcos/images/train2014/*
 yolov3-fcos/images/val2014/*
 yolov3-fcos/labels/*
 yolov3-fcos/weights/*
+pytorch基础/data/MNIST/raw/t10k-labels-idx1-ubyte
+pytorch基础/data/MNIST/raw/t10k-images-idx3-ubyte
+pytorch基础/data/MNIST/raw/train-labels-idx1-ubyte
+pytorch基础/data/MNIST/raw/train-images-idx3-ubyte

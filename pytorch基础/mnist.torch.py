@@ -10,13 +10,10 @@ mnist_train_dataset = datasets.MNIST(root="./data/",
                                       train=True,
                                       download=True,
                                       transform=
-                                        transforms.Compose([ 
+                                        transforms.Compose([
                                                             transforms.Resize([28,28]),
-                                                            
-                                                            transforms.Normalize(mean=[0.5],  std=[0.5]),
-                                                            #                      ,
-                                                            transforms.ToTensor()
-                                                            # transforms.ToPILImage()
+                                                            transforms.ToTensor(),
+                                                            transforms.Normalize(mean=[0.5],std=[0.5]), 
                                                             ])
                                     )
                                         
@@ -25,7 +22,6 @@ mnist_test_dataset = datasets.MNIST(root="./data/",
                                       download=True,
                                       transform = transforms.Compose([transforms.ToTensor(),
                                                                       transforms.Resize((28,28))
-                                                                      ,transforms.ToPILImage()
                                                                       ])
                                     )
 

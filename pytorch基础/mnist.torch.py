@@ -20,9 +20,10 @@ mnist_train_dataset = datasets.MNIST(root="./data/",
 mnist_test_dataset = datasets.MNIST(root="./data/",
                                       train=False,
                                       download=True,
-                                      transform = transforms.Compose([transforms.ToTensor(),
-                                                                      transforms.Resize((28,28))
-                                                                      ])
+                                      transform = transforms.Compose([
+                                                            transforms.Resize([28,28]),
+                                                            transforms.ToTensor()
+                                                            ])
                                     )
 
 # part 2: 数据装载， dataloader
@@ -40,6 +41,7 @@ data_loader_test = torch.utils.data.DataLoader(
 
 
 # part 3: 数据可视化，检查数据
+'''
 images,labels = next(iter(data_loader_train))
 # TypeError: img should be PIL Image. Got <class 'torch.Tensor'>
 img = torchvision.utils.make_grid(images)
@@ -51,76 +53,79 @@ img = img * std + mean
 print([int(labels[i].numpy()) for i,label in enumerate(labels)])
 plt.imshow(img)
 plt.show()
+'''
 
-# # part 4: 模型搭建
-# class Model(torch.nn.Module):
-#     def __init__(self):
-#         super(Model,self).__init__()
-#         self.features = nn.Sequential(
-#             # out = (in-kernelSize+2*padding)/stride+1
-#             nn.Conv2d(1,8,kernel_size=3,stride=1,padding=1),
-#             nn.ReLU(),
-#             nn.Conv2d(8,16,kernel_size=3,stride=1, padding=1),
-#             nn.ReLU(),
-#             # out = out/2
-#             nn.MaxPool2d(stride=2,kernel_size=2),
-#             nn.ReLU(),
-#             nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
-#             nn.ReLU(),
-#             nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
-#             nn.ReLU(),
-#             nn.MaxPool2d(stride=2, kernel_size=2),
-#             nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
-#             nn.ReLU(),
-#         )
-#         self.classifier = nn.Sequential(
-#             nn.Linear(7*7*128, 1024),
-#             nn.ReLU(),
-#             nn.Dropout(0.5),
-#             torch.nn.Linear(1024, 10)
-#         )
-#     def forward(self, x):
-#         x = self.features(x)
-#         x = x.view(-1, 7*7*128)
-#         x = self.classifier(x)
-#         return x
+# part 4: 模型搭建
+class Model(torch.nn.Module):
+    def __init__(self):
+        super(Model,self).__init__()
+        self.features = nn.Sequential(
+            # out = (in-kernelSize+2*padding)/stride+1
+            nn.Conv2d(1,8,kernel_size=3,stride=1,padding=1),
+            nn.ReLU(),
+            nn.Conv2d(8,16,kernel_size=3,stride=1, padding=1),
+            nn.ReLU(),
+            # out = out/2
+            nn.MaxPool2d(stride=2,kernel_size=2),
+            nn.ReLU(),
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(stride=2, kernel_size=2),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+        )
+        self.classifier = nn.Sequential(
+            nn.Linear(7*7*128, 1024),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            torch.nn.Linear(1024, 10)
+        )
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(-1, 7*7*128)
+        x = self.classifier(x)
+        return x
 
-# # part 5: 训练以及测试
-# epochs=5
-# model=Model()
-# cost = torch.nn.CrossEntropyLoss()
-# optimizer = torch.optim.Adam(model.parameters())
+# part 5: 训练以及测试
+epochs=5
+model=Model()
+cost = torch.nn.CrossEntropyLoss()
+optimizer = torch.optim.Adam(model.parameters())
 
-# for epoch in range(epochs):
-#     print("-"*5,"train","-"*5)
-#     train_loss,train_correct = 0,0
-#     for data in data_loader_train:
-#         x_train, y_train = data
-#         x_train, y_train = Variable(x_train), Variable(y_train)
+for epoch in range(epochs):
+    print("-"*5,"train","-"*5)
+    train_loss,train_correct = 0,0
+    for data in data_loader_train:
+        x_train, y_train = data
+        x_train, y_train = Variable(x_train), Variable(y_train)
 
-#         optimizer.zero_grad()
+        optimizer.zero_grad()
 
-#         outputs = model(x_train)
-#         _,pred = torch.max(outputs.data, 1)
+        outputs = model(x_train)
+        _,pred = torch.max(outputs.data, 1)
 
-#         loss = cost(outputs, y_train)
+        loss = cost(outputs, y_train)
 
-#         loss.backward()
-#         optimizer.step()
+        loss.backward()
+        optimizer.step()
 
-#         # record loss and correct num
-#         train_loss += loss.data
-#         train_correct += torch.sum(pred==y_train.data)
-#     test_correct = 0
-#     for data in data_loader_test:
-#         x_test, y_test = data
-#         x_test, y_test = Variable(x_test), Variable(y_test)
+        # record loss and correct num
+        train_loss += loss.data
+        train_correct += torch.sum(pred==y_train.data)
+    test_correct = 0
 
-#         outputs = model(x_test)
+    print('-'*5,"test",'-'*5)
+    for data in data_loader_test:
+        x_test, y_test = data
+        x_test, y_test = Variable(x_test), Variable(y_test)
 
-#         test_correct += torch.sum(pred==y_test.data)
+        outputs = model(x_test)
+
+        test_correct += torch.sum(pred==y_test.data)
     
-#     print("train loss: %.3f \t train acc: %.3f \t test acc: %.3f" % (
-#         train_loss,
-#         train_correct/len(data_loader_train),
-#         test_correct/len(data_loader_test)))
+    print("train loss: %.3f \t train acc: %.3f%%\t test acc: %.3f%%" % (
+        train_loss,
+        train_correct/len(data_loader_train),
+        test_correct/len(data_loader_test)))

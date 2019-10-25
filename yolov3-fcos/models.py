@@ -157,7 +157,7 @@ class YOLOLayer(nn.Module):
         if ONNX_EXPORT:
             bs = 1  # batch size
         else:
-            # p -> (batch size , channels, grid size(y的坐标), grid size(x的坐标))
+            # p -> (bbatch size , channels, grid size(y的坐标), grid size(x的坐标))
             bs, ny, nx = p.shape[0], p.shape[-2], p.shape[-1]
             if (self.nx, self.ny) != (nx, ny):
                 create_grids(self, img_size, (nx, ny), p.device)

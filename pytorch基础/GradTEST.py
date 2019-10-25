@@ -1,10 +1,10 @@
 import torch
 
 x = torch.randn(1, 2)
-y = torch.randn(1, 1)
+y = torch.randn(1, 3)
 
 w1 = torch.randn(2, 4)
-w2 = torch.randn(4, 6)
+w2 = torch.randn(4, 3)
 
 epoch_n = 20
 learning_rate = 1e-6

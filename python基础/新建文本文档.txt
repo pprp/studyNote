@@ -1,0 +1,2 @@
+:%s/^/\/home\/dongpeijie\/template\/yolov3.cow\/images\/train2014\/
+:%s/^/\/home\/dongpeijie\/template\/yolov3.cow\/images\/val2014\/

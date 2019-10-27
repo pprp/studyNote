@@ -1,4 +1,3 @@
-
 def ss():
     print("this is rootpkg/src/source/src")
     print('__name__: {}'.format(__name__))

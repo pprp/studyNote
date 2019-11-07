@@ -92,7 +92,7 @@ class Model(torch.nn.Module):
 epochs=5
 model=Model()
 cost = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.Adam(model.parameters())
+optimizer = torch.optim.Adam(model.parameters(),lr=1e-3)
 
 for epoch in range(epochs):
     print("-"*5,"train","-"*5)
